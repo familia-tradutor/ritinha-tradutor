@@ -1,39 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
-
-export async function POST(req: NextRequest) {
-  try {
-    const { text, targetLang } = await req.json();
-    const apiKey = process.env.DEEPL_API_KEY?.trim();
-
-    if (!apiKey) {
-      return NextResponse.json({ error: 'DEEPL_API_KEY nao configurada' }, { status: 500 });
+import { NextResponse } from 'next/server'
+export async function POST(req: Request){
+  const { text, from, to } = await req.json()
+  if(!text) return NextResponse.json({ translated: '' })
+  const f = from.split('-')[0]; const t = to.split('-')[0]
+  if(f===t) return NextResponse.json({ translated: text })
+  try{
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${f}|${t}`
+    const r = await fetch(url)
+    const d = await r.json()
+    let out = d?.responseData?.translatedText || text
+    if(out.toLowerCase()===text.toLowerCase() && f!=='en' && t!=='en'){
+      const r1 = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${f}|en`)
+      const d1 = await r1.json()
+      const en = d1?.responseData?.translatedText || text
+      const r2 = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(en)}&langpair=en|${t}`)
+      const d2 = await r2.json()
+      out = d2?.responseData?.translatedText || en
     }
-
-    const isFree = apiKey.endsWith(':fx');
-    const baseUrl = isFree? 'https://api-free.deepl.com' : 'https://api.deepl.com';
-
-    const response = await fetch(`${baseUrl}/v2/translate`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `DeepL-Auth-Key ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        text: [text],
-        target_lang: targetLang,
-        source_lang: 'PT',
-      }),
-    });
-
-    const data = await response.json();
-    console.log('DeepL status:', response.status);
-
-    if (!response.ok) {
-      return NextResponse.json({ error: data }, { status: response.status });
-    }
-
-    return NextResponse.json({ translatedText: data.translations[0].text });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ translated: out })
+  }catch{
+    return NextResponse.json({ translated: text })
   }
 }
