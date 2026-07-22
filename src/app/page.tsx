@@ -71,15 +71,12 @@ export default function Page(){
     rec.continuous=true
     rec.interimResults=true
     rec.maxAlternatives=1
-
     rec.onresult=(e:any)=>{
-      // FIX DEFINITIVO - pega só o último resultado para não duplicar Olá Olá bom
       const lastIdx = e.results.length - 1
       const lastText = e.results[lastIdx][0].transcript.trim().slice(0, 380)
       setOrigem(lastText)
       setInterim(lastText || 'Ouvindo...')
     }
-
     rec.onend=()=>{
       if(isActive && recRef.current){
         try{ rec.start() }catch{}
@@ -121,14 +118,17 @@ export default function Page(){
       reader.onload = async () => {
         const base64 = reader.result as string
         setCameraImage(base64)
-        const ocrRes = await fetch('/api/ocr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64 }) })
-        const ocrData = await ocrRes.json()
-        const extracted = ocrData.extracted || ''
-        if (!extracted) { alert('Nenhum texto encontrado'); setCameraLoading(false); return }
-        setOcrOriginal(extracted)
-        const transRes = await fetch('/api/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: extracted.slice(0,380), from:'auto', to:'pt' }) })
-        const transData = await transRes.json()
-        setOcrTranslated(transData.translated || transData.translation || extracted)
+        try{
+          const ocrRes = await fetch('/api/ocr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64 }) })
+          const ocrData = await ocrRes.json()
+          const extracted = ocrData.extracted || ocrData.text || ''
+          if (!extracted) { alert('Nenhum texto encontrado na foto'); setCameraLoading(false); return }
+          setOcrOriginal(extracted)
+          // FIX SCAN: usa mesma API do MIC com from/to corretos
+          const transRes = await fetch('/api/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: extracted.slice(0,380), from: 'auto', to: from }) })
+          const transData = await transRes.json()
+          setOcrTranslated(transData.translated || transData.translation || 'Sem tradução')
+        }catch(err){ console.error(err); alert('Erro no OCR/Tradução') }
         setCameraLoading(false)
       }
       reader.readAsDataURL(file)
@@ -161,7 +161,7 @@ export default function Page(){
               <>
                 <p className="text-xs text-white/50 mb-1">ORIGINAL:</p>
                 <p className="bg-white/10 p-3 rounded-lg text-white text-sm mb-3 whitespace-pre-wrap">{ocrOriginal}</p>
-                <p className="text-xs text-yellow-400/70 mb-1">TRADUZIDO (PT):</p>
+                <p className="text-xs text-yellow-400/70 mb-1">TRADUZIDO ({from.toUpperCase()}):</p>
                 <p className="bg-yellow-500/20 p-3 rounded-lg text-white text-sm whitespace-pre-wrap border border-yellow-500/30">{ocrTranslated || 'Traduzindo...'}</p>
               </>
             )}
@@ -178,7 +178,7 @@ export default function Page(){
           <div className="bg-black/75 backdrop-blur border border-[#D4AF37]/20 rounded-2xl p-4 min-h-">
             {isActive? (
               <div>
-                <div className="flex items-center gap-2 text-red-400 text-xs animate-pulse mb-2"><span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span> GRAVANDO - FALE TUDO, SÓ PARA QUANDO CLICAR EM PARAR</div>
+                <div className="flex items-center gap-2 text-red-400 text-xs animate-pulse mb-2"><span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span> GRAVANDO</div>
                 <div className="text-white/90 leading-relaxed">{interim||origem||'Ouvindo...'}</div>
               </div>
             ) : origem || traduzido? (
@@ -187,7 +187,7 @@ export default function Page(){
                 {traduzido && <div><div className="text-xs tracking-widest text-[#D4AF37]/60 mb-1">{toFlag} {toLabel} TRADUÇÃO:</div><div className="text-[#FFD700] font-bold text-lg">{traduzido}</div></div>}
               </div>
             ) : (
-              <div className="text-center text-white/30 text-sm py-8">Toque no microfone, fale a frase inteira sem pressa, depois clique em PARAR</div>
+              <div className="text-center text-white/30 text-sm py-8">Toque no microfone</div>
             )}
           </div>
         </div>
@@ -202,11 +202,8 @@ export default function Page(){
               <button onClick={()=>startContinuous(to)} className="h- rounded-2xl bg-[#1a1a1f] border border-[#D4AF37]/30 text-[#D4AF37] font-black flex flex-col items-center justify-center gap-0.5 active:scale-95"><span>🎤 MIC</span><span className="text-sm">{toFlag} {toLabel}</span><span className="text- opacity-70">TAP TO TALK</span></button>
             </div>
           ) : (
-            <button onClick={stopContinuous} className="w-full h- rounded-2xl bg-red-600 text-white font-black flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,0,0,0.5)] animate-pulse active:scale-95">
-              <span className="w-4 h-4 bg-white rounded-sm"></span> PARAR E TRADUZIR
-            </button>
+            <button onClick={stopContinuous} className="w-full h- rounded-2xl bg-red-600 text-white font-black flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,0,0,0.5)] animate-pulse active:scale-95">PARAR E TRADUZIR</button>
           )}
-          <div className="flex justify-between mt-3 text- text-white/20"><span>{fromFlag} {from} → {toFlag} {to}</span><button onClick={()=>{setOrigem(''); setTraduzido(''); setInterim('')}} className="text-white/30">Limpar</button></div>
         </div>
       </div>
     </div>
