@@ -164,8 +164,8 @@ export default function Page(){
       <div className="flex-1 relative bg-[#050507] flex items-center justify-center">
         
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleCameraCapture} className="hidden" />
-      <button onClick={() => cameraInputRef.current?.click()} disabled={cameraLoading} className="fixed top-4 right-4 z-50 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold px-5 py-3 rounded-full shadow-xl flex items-center gap-2">
-        {cameraLoading? '⏳ Lendo...' : '📷 SCAN'}
+      <button onClick={() => cameraInputRef.current?.click()} disabled={cameraLoading} className="fixed bottom- left-1/2 -translate-x-1/2 z-40 bg-white/10 backdrop-blur border border-white/20 hover:bg-white/20 text-white text-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+        {cameraLoading? '⏳ Lendo...' : '📷 SCAN Doc'}
       </button>
       {cameraImage && (
         <div className="fixed bottom-4 left-4 right-4 z-50 bg-black/90 backdrop-blur border border-yellow-500/30 rounded-2xl p-4 max-h- overflow-auto">
