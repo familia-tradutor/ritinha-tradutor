@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 const LANGS = [
   { code:'pt', label:'PT Brasil', flag:'🇧🇷', speech:'pt-BR' },
@@ -60,33 +60,24 @@ export default function Page(){
 
   const startContinuous=(code:string)=>{
     if(isActive){ stopContinuous(); return }
-    setListening(code); setIsActive(true); setOrigem(''); setTraduzido(''); setInterim('Ouvindo... fale tudo, só para quando clicar em PARAR')
+    setListening(code); setIsActive(true); setOrigem(''); setTraduzido(''); setInterim('Ouvindo...')
     const Rec=(window as any).webkitSpeechRecognition||(window as any).SpeechRecognition
     if(!Rec){
-      setTimeout(()=>{ const fake=code==='pt'?'Boa noite acabei de chegar do Brasil e estou cansado':'Good evening I just arrived'; doTranslate(fake, code, code===from?to:from); setIsActive(false); setListening(null) },1000)
+      setTimeout(()=>{ doTranslate(code==='pt'?'Boa noite acabei de chegar':'Good evening', code, code===from?to:from); setIsActive(false); setListening(null) },1000)
       return
     }
     const rec=new Rec()
-    const langObj=LANGS.find(l=>l.code===code)
-    rec.lang=langObj?.speech||'pt-BR'
+    rec.lang=LANGS.find(l=>l.code===code)?.speech||'pt-BR'
     rec.continuous=true
     rec.interimResults=true
     rec.maxAlternatives=1
 
     rec.onresult=(e:any)=>{
-      let finalText = ''
-      let interimText = ''
-      for(let i=0; i<e.results.length; i++){
-        const t=e.results[i][0].transcript
-        if(e.results[i].isFinal){
-          finalText += t + ' '
-        } else {
-          interimText += t + ' '
-        }
-      }
-      const full = (finalText + interimText).trim().slice(0, 380)
-      setOrigem(full)
-      setInterim(full || 'Ouvindo...')
+      // FIX DEFINITIVO - pega só o último resultado para não duplicar Olá Olá bom
+      const lastIdx = e.results.length - 1
+      const lastText = e.results[lastIdx][0].transcript.trim().slice(0, 380)
+      setOrigem(lastText)
+      setInterim(lastText || 'Ouvindo...')
     }
 
     rec.onend=()=>{
@@ -212,10 +203,10 @@ export default function Page(){
             </div>
           ) : (
             <button onClick={stopContinuous} className="w-full h- rounded-2xl bg-red-600 text-white font-black flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,0,0,0.5)] animate-pulse active:scale-95">
-              <span className="w-4 h-4 bg-white rounded-sm"></span> PARAR E TRADUZIR - {LANGS.find(l=>l.code===listening)?.flag} {LANGS.find(l=>l.code===listening)?.label}
+              <span className="w-4 h-4 bg-white rounded-sm"></span> PARAR E TRADUZIR
             </button>
           )}
-          <div className="flex justify-between mt-3 text- text-white/20"><span>{fromFlag} {from} → {toFlag} {to} • modo conversa contínuo</span><button onClick={()=>{setOrigem(''); setTraduzido(''); setInterim('')}} className="text-white/30">Limpar</button></div>
+          <div className="flex justify-between mt-3 text- text-white/20"><span>{fromFlag} {from} → {toFlag} {to}</span><button onClick={()=>{setOrigem(''); setTraduzido(''); setInterim('')}} className="text-white/30">Limpar</button></div>
         </div>
       </div>
     </div>
