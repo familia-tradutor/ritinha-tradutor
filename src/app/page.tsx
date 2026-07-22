@@ -128,7 +128,7 @@ export default function Page(){
       </header>
 
       <div className="flex-1 relative bg-[#050507] flex items-center justify-center">
-        <img src="/globo-passaporte.png" alt="Ritinha" className="absolute w-[380px] h-[380px] object-contain opacity-90 drop-shadow-[0_0_30px_rgba(255,215,0,0.4)]" />
+        <img src="/globo-passaporte.png" alt="Ritinha" className={`absolute w-[380px] h-[380px] object-contain transition-all duration-700 ${isActive? "scale-110 animate-pulse drop-shadow-[0_0_60px_rgba(255,60,60,0.8)] brightness-110" : "animate-[spin_60s_linear_infinite] opacity-90 drop-shadow-[0_0_30px_rgba(255,215,0,0.4)]"}`} />
         <div className="relative z-10 w-full max-w- px-4">
           <div className="bg-black/75 backdrop-blur border border-[#D4AF37]/20 rounded-2xl p-4 min-h-">
             {isActive? (
