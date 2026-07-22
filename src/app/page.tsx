@@ -26,6 +26,11 @@ export default function Page(){
   const [traduzido, setTraduzido] = useState('')
   const [listening, setListening] = useState<string|null>(null)
   const [isActive, setIsActive] = useState(false)
+ const [cameraLoading, setCameraLoading] = useState(false)
+ const [cameraImage, setCameraImage] = useState<string|null>(null)
+ const [ocrOriginal, setOcrOriginal] = useState("")
+ const [ocrTranslated, setOcrTranslated] = useState("")
+ const cameraInputRef = useRef<HTMLInputElement>(null)
   const [interim, setInterim] = useState('')
 
   const doTranslate=async(text:string, f:string, t:string)=>{
@@ -116,7 +121,36 @@ export default function Page(){
   const fromFlag=LANGS.find(l=>l.code===from)?.flag||'🏳️'
   const toFlag=LANGS.find(l=>l.code===to)?.flag||'🏳️'
 
-  return (
+  
+  const handleCameraCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setCameraLoading(true)
+    setOcrOriginal("")
+    setOcrTranslated("")
+    try {
+      const reader = new FileReader()
+      reader.onload = async () => {
+        const base64 = reader.result as string
+        setCameraImage(base64)
+        const ocrRes = await fetch('/api/ocr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64 }) })
+        const ocrData = await ocrRes.json()
+        const extracted = ocrData.extracted || ''
+        if (!extracted) { alert('Nenhum texto encontrado'); setCameraLoading(false); return }
+        setOcrOriginal(extracted)
+        const transRes = await fetch('/api/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: extracted, targetLanguage: 'pt', sourceLanguage: 'auto' }) })
+        const transData = await transRes.json()
+        setOcrTranslated(transData.translated || transData.translation || extracted)
+        setCameraLoading(false)
+      }
+      reader.readAsDataURL(file)
+    } catch (err) {
+      console.error(err)
+      setCameraLoading(false)
+    }
+  }
+
+ return (
     <div className="min-h-screen bg-black text-white flex flex-col">
       <header className="flex items-center justify-between px-3 py-2.5 bg-[#0a0a0a] border-b border-[#1e1e1e] z-20 gap-2">
         <div className="flex items-center gap-2"><div className="w-7 h-7 rounded bg-[#FFD700] flex items-center justify-center text-black font-black text-sm">R</div><div className="font-bold text-">Ritinha Tradutor</div></div>
@@ -128,7 +162,30 @@ export default function Page(){
       </header>
 
       <div className="flex-1 relative bg-[#050507] flex items-center justify-center">
-        <img src="/globo-passaporte.png" alt="Ritinha" className={`absolute w-[380px] h-[380px] object-contain transition-all duration-700 ${isActive? "scale-110 animate-pulse drop-shadow-[0_0_60px_rgba(255,60,60,0.8)] brightness-110" : "animate-[spin_60s_linear_infinite] opacity-90 drop-shadow-[0_0_30px_rgba(255,215,0,0.4)]"}`} />
+        
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleCameraCapture} className="hidden" />
+      <button onClick={() => cameraInputRef.current?.click()} disabled={cameraLoading} className="fixed top-4 right-4 z-50 bg-gradient-to-r from-yellow-400 to-orange-500 text-black font-bold px-5 py-3 rounded-full shadow-xl flex items-center gap-2">
+        {cameraLoading? '⏳ Lendo...' : '📷 SCAN'}
+      </button>
+      {cameraImage && (
+        <div className="fixed bottom-4 left-4 right-4 z-50 bg-black/90 backdrop-blur border border-yellow-500/30 rounded-2xl p-4 max-h- overflow-auto">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-yellow-400 font-bold">Foto escaneada</h3>
+            <button onClick={()=>{setCameraImage(null); setOcrOriginal(""); setOcrTranslated("")}} className="text-white/60 hover:text-white">✕</button>
+          </div>
+          <img src={cameraImage} className="w-full h-32 object-contain rounded-lg mb-3 bg-white/10" />
+          {ocrOriginal && (
+            <>
+              <p className="text-xs text-white/50 mb-1">ORIGINAL:</p>
+              <p className="bg-white/10 p-3 rounded-lg text-white text-sm mb-3 whitespace-pre-wrap">{ocrOriginal}</p>
+              <p className="text-xs text-yellow-400/70 mb-1">TRADUZIDO (PT):</p>
+              <p className="bg-yellow-500/20 p-3 rounded-lg text-white text-sm whitespace-pre-wrap border border-yellow-500/30">{ocrTranslated || 'Traduzindo...'}</p>
+            </>
+          )}
+        </div>
+      )}
+
+ <img src="/globo-passaporte.png" alt="Ritinha" className={`absolute w-[380px] h-[380px] object-contain transition-all duration-700 ${isActive? "scale-110 animate-pulse drop-shadow-[0_0_60px_rgba(255,60,60,0.8)] brightness-110" : "animate-[spin_60s_linear_infinite] opacity-90 drop-shadow-[0_0_30px_rgba(255,215,0,0.4)]"}`} />
         <div className="relative z-10 w-full max-w- px-4">
           <div className="bg-black/75 backdrop-blur border border-[#D4AF37]/20 rounded-2xl p-4 min-h-">
             {isActive? (
