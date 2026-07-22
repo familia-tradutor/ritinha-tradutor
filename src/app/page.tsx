@@ -163,10 +163,7 @@ export default function Page(){
 
       <div className="flex-1 relative bg-[#050507] flex items-center justify-center">
         
-      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleCameraCapture} className="hidden" />
-      <button onClick={() => cameraInputRef.current?.click()} disabled={cameraLoading} className="fixed bottom- md:bottom- left-1/2 -translate-x-1/2 z-30 bg-black/70 backdrop-blur-md border border-yellow-500/30 text-yellow-100 text-xs px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg flex items-center gap-2">
-        {cameraLoading? '⏳ Lendo...' : '📷 SCAN Doc'}
-      </button>
+      
       {cameraImage && (
         <div className="fixed bottom-4 left-4 right-4 z-50 bg-black/90 backdrop-blur border border-yellow-500/30 rounded-2xl p-4 max-h- overflow-auto">
           <div className="flex justify-between items-center mb-3">
@@ -184,6 +181,12 @@ export default function Page(){
           )}
         </div>
       )}
+
+ 
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleCameraCapture} className="hidden" />
+      <button onClick={() => cameraInputRef.current?.click()} disabled={cameraLoading} className="fixed bottom- md:bottom- left-1/2 -translate-x-1/2 z-[60] bg-black/80 backdrop-blur border border-yellow-500/40 text-yellow-100 text-xs px-4 py-2 rounded-full shadow-xl flex items-center gap-1.5">
+        {cameraLoading? '⏳ Lendo...' : '📷 SCAN Doc'}
+      </button>
 
  <img src="/globo-passaporte.png" alt="Ritinha" className={`absolute w-[380px] h-[380px] object-contain transition-all duration-700 ${isActive? "scale-110 animate-pulse drop-shadow-[0_0_60px_rgba(255,60,60,0.8)] brightness-110" : "animate-[spin_60s_linear_infinite] opacity-90 drop-shadow-[0_0_30px_rgba(255,215,0,0.4)]"}`} />
         <div className="relative z-10 w-full max-w- px-4">
