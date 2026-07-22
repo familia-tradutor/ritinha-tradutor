@@ -1,4 +1,3 @@
-TSX
 "use client"
 import { useEffect, useRef, useState } from 'react'
 
@@ -74,7 +73,6 @@ export default function Page(){
     rec.interimResults=true
     rec.maxAlternatives=1
 
-    // CORREÇÃO DEFINITIVA ANTI-DUPLICAÇÃO
     rec.onresult=(e:any)=>{
       let finalText = ''
       let interimText = ''
@@ -86,8 +84,6 @@ export default function Page(){
           interimText += t + ' '
         }
       }
-      // No Android o resultado já vem completo, então NÃO somamos com variável externa
-      // Mostramos apenas o texto atual (final + interim) e limitamos
       const full = (finalText + interimText).trim().slice(0, 380)
       setOrigem(full)
       setInterim(full || 'Ouvindo...')
@@ -164,7 +160,7 @@ export default function Page(){
 
       <div className="flex-1 relative bg-[#050507] flex items-center justify-center">
         {cameraImage && (
-          <div className="fixed bottom-4 left-4 right-4 z-50 bg-black/90 backdrop-blur border border-yellow-500/30 rounded-2xl p-4 max-h-[70vh] overflow-auto">
+          <div className="fixed bottom-4 left-4 right-4 z-50 bg-black/90 backdrop-blur border border-yellow-500/30 rounded-2xl p-4 max-h- overflow-auto">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-yellow-400 font-bold">Foto escaneada</h3>
               <button onClick={()=>{setCameraImage(null); setOcrOriginal(""); setOcrTranslated("")}} className="text-white/60 hover:text-white">✕</button>
@@ -186,9 +182,9 @@ export default function Page(){
           {cameraLoading? '⏳' : '📷 SCAN'}
         </button>
 
-        <img src="/globo-passaporte.png" alt="Ritinha" className={`absolute w-[380px] h-[380px] object-contain transition-all duration-700 ${isActive? "scale-110 animate-pulse drop-shadow-[0_0_60px_rgba(255,60,60,0.8)] brightness-110" : "animate-[spin_60s_linear_infinite] opacity-90 drop-shadow-[0_0_30px_rgba(255,215,0,0.4)]"}`} />
-        <div className="relative z-10 w-full max-w-[600px] px-4">
-          <div className="bg-black/75 backdrop-blur border border-[#D4AF37]/20 rounded-2xl p-4 min-h-[120px]">
+        <img src="/globo-passaporte.png" alt="Ritinha" className={`absolute w- h- object-contain transition-all duration-700 ${isActive? "scale-110 animate-pulse drop-shadow-[0_0_60px_rgba(255,60,60,0.8)] brightness-110" : "animate-[spin_60s_linear_infinite] opacity-90 drop-shadow-[0_0_30px_rgba(255,215,0,0.4)]"}`} />
+        <div className="relative z-10 w-full max-w- px-4">
+          <div className="bg-black/75 backdrop-blur border border-[#D4AF37]/20 rounded-2xl p-4 min-h-">
             {isActive? (
               <div>
                 <div className="flex items-center gap-2 text-red-400 text-xs animate-pulse mb-2"><span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span> GRAVANDO - FALE TUDO, SÓ PARA QUANDO CLICAR EM PARAR</div>
@@ -207,19 +203,19 @@ export default function Page(){
       </div>
 
       <div className="bg-[#0f0f10] border-t border-[#222] p-3 pb-5 z-20">
-        <div className="max-w-[600px] mx-auto">
+        <div className="max-w- mx-auto">
           {!isActive? (
             <div className="grid grid-cols-[1fr_48px_1fr] gap-2 items-center">
-              <button onClick={()=>startContinuous(from)} className="h-[84px] rounded-2xl bg-[#FFD700] text-black font-black flex flex-col items-center justify-center gap-0.5 shadow-[0_0_20px_rgba(255,215,0,0.35)] active:scale-95"><span>🎤 MIC</span><span className="text-sm">{fromFlag} {fromLabel}</span><span className="text-[10px] opacity-70">TOQUE E FALE</span></button>
+              <button onClick={()=>startContinuous(from)} className="h- rounded-2xl bg-[#FFD700] text-black font-black flex flex-col items-center justify-center gap-0.5 shadow-[0_0_20px_rgba(255,215,0,0.35)] active:scale-95"><span>🎤 MIC</span><span className="text-sm">{fromFlag} {fromLabel}</span><span className="text- opacity-70">TOQUE E FALE</span></button>
               <button onClick={swap} className="h-12 w-12 rounded-full bg-[#1e1e1e] border border-[#333] text-[#D4AF37] mx-auto">↔</button>
-              <button onClick={()=>startContinuous(to)} className="h-[84px] rounded-2xl bg-[#1a1a1f] border border-[#D4AF37]/30 text-[#D4AF37] font-black flex flex-col items-center justify-center gap-0.5 active:scale-95"><span>🎤 MIC</span><span className="text-sm">{toFlag} {toLabel}</span><span className="text-[10px] opacity-70">TAP TO TALK</span></button>
+              <button onClick={()=>startContinuous(to)} className="h- rounded-2xl bg-[#1a1a1f] border border-[#D4AF37]/30 text-[#D4AF37] font-black flex flex-col items-center justify-center gap-0.5 active:scale-95"><span>🎤 MIC</span><span className="text-sm">{toFlag} {toLabel}</span><span className="text- opacity-70">TAP TO TALK</span></button>
             </div>
           ) : (
-            <button onClick={stopContinuous} className="w-full h-[84px] rounded-2xl bg-red-600 text-white font-black flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,0,0,0.5)] animate-pulse active:scale-95">
+            <button onClick={stopContinuous} className="w-full h- rounded-2xl bg-red-600 text-white font-black flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,0,0,0.5)] animate-pulse active:scale-95">
               <span className="w-4 h-4 bg-white rounded-sm"></span> PARAR E TRADUZIR - {LANGS.find(l=>l.code===listening)?.flag} {LANGS.find(l=>l.code===listening)?.label}
             </button>
           )}
-          <div className="flex justify-between mt-3 text-[10px] text-white/20"><span>{fromFlag} {from} → {toFlag} {to} • modo conversa contínuo</span><button onClick={()=>{setOrigem(''); setTraduzido(''); setInterim('')}} className="text-white/30">Limpar</button></div>
+          <div className="flex justify-between mt-3 text- text-white/20"><span>{fromFlag} {from} → {toFlag} {to} • modo conversa contínuo</span><button onClick={()=>{setOrigem(''); setTraduzido(''); setInterim('')}} className="text-white/30">Limpar</button></div>
         </div>
       </div>
     </div>
