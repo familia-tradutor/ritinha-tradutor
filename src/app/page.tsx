@@ -183,6 +183,9 @@ export default function Page(){
       )}
 
  
+      
+
+ 
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleCameraCapture} className="hidden" />
       <button onClick={() => cameraInputRef.current?.click()} disabled={cameraLoading} className="fixed bottom-28 right-4 z-[70] bg-zinc-900 border border-yellow-500/30 text-yellow-200 text-xs px-3 py-2 rounded-full shadow-xl">
         {cameraLoading? '⏳' : '📷 SCAN'}
