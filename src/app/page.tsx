@@ -184,8 +184,8 @@ export default function Page(){
 
  
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleCameraCapture} className="hidden" />
-      <button onClick={() => cameraInputRef.current?.click()} disabled={cameraLoading} className="fixed bottom- md:bottom- left-1/2 -translate-x-1/2 z-[60] bg-black/80 backdrop-blur border border-yellow-500/40 text-yellow-100 text-xs px-4 py-2 rounded-full shadow-xl flex items-center gap-1.5">
-        {cameraLoading? '⏳ Lendo...' : '📷 SCAN Doc'}
+      <button onClick={() => cameraInputRef.current?.click()} disabled={cameraLoading} className="fixed bottom-28 right-4 z-[70] bg-zinc-900 border border-yellow-500/30 text-yellow-200 text-xs px-3 py-2 rounded-full shadow-xl">
+        {cameraLoading? '⏳' : '📷 SCAN'}
       </button>
 
  <img src="/globo-passaporte.png" alt="Ritinha" className={`absolute w-[380px] h-[380px] object-contain transition-all duration-700 ${isActive? "scale-110 animate-pulse drop-shadow-[0_0_60px_rgba(255,60,60,0.8)] brightness-110" : "animate-[spin_60s_linear_infinite] opacity-90 drop-shadow-[0_0_30px_rgba(255,215,0,0.4)]"}`} />
