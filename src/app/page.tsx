@@ -1,5 +1,4 @@
 "use client"
-import Historico, { salvarNoHistorico } from "@/components/Historico";
 import { useRef, useState } from 'react'
 
 const LANGS = [
