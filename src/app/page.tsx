@@ -72,6 +72,9 @@ export default function Page(){
     const txt=origem||interim
     if(txt &&!txt.startsWith('Ouvindo') &&!txt.startsWith('Traduzindo')){ const al=listening||from; doTranslate(txt, al, al===from?to:from) }
   }
+ const copiarAtual = () => traduzido && navigator.clipboard.writeText(traduzido)
+ const compartilharAtual = () => { const txt = `Ritinha: ${origem} -> ${traduzido}`; if(navigator.share) navigator.share({title:"Ritinha", text:txt}); else window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`,"_blank") }
+
   const fromLabel=LANGS.find(l=>l.code===from)?.label||from; const toLabel=LANGS.find(l=>l.code===to)?.label||to
   const fromFlag=LANGS.find(l=>l.code===from)?.flag||'🏳'; const toFlag=LANGS.find(l=>l.code===to)?.flag||'🏳'
   const handleCameraCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
