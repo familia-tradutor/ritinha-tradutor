@@ -1,30 +1,26 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: "Familia Tradutor Premium",
-  description: "Tradutor com globo 3D",
-  manifest: "/manifest.json",
+  title: "Ritinha Tradutor",
+  description: "Tradutor voz e câmera da Ritinha - PT <> EN, ES, IT, FR, DE, JA, ZH",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Ritinha",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
   themeColor: "#FFD700",
+  backgroundColor: "#000000",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <head>
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#FFD700" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
-        <script dangerouslySetInnerHTML={{__html:`if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js')}`}} />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
