@@ -1,4 +1,5 @@
 "use client"
+import Historico, { salvarNoHistorico } from "@/components/Historico";
 import { useRef, useState } from 'react'
 
 const LANGS = [
@@ -56,9 +57,9 @@ export default function Page(){
     setOrigem(clean); setInterim('Traduzindo...')
     try{
       const r=await fetch('/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text: clean, from:f, to:t})})
-      const d=await r.json(); setTraduzido(d.translated||clean); setInterim('')
+      const d=await r.json(); setTraduzido(d.translated||clean); salvarNoHistorico(origem, d.translated||clean); setInterim('')
       const utter=new SpeechSynthesisUtterance(d.translated||clean); utter.lang=LANGS.find(l=>l.code===t)?.speech||'en-US'; speechSynthesis.speak(utter)
-    }catch{ setTraduzido(clean); setInterim('') }
+    }catch{ setTraduzido(clean); salvarNoHistorico(origem, clean); setInterim('') }
   }
   const swap=()=>{ const f=from; const t=to; setFrom(t); setTo(f); setOrigem(traduzido); setTraduzido(origem) }
   const startContinuous=(code:string)=>{
