@@ -1,6 +1,5 @@
 "use client"
 import { useRef, useState } from 'react'
-import { createWorker } from 'tesseract.js'
 
 const LANGS = [
   { code:'pt', label:'PT Brasil', flag:'🇧🇷', speech:'pt-BR' },
@@ -106,24 +105,23 @@ export default function Page(){
     setCameraLoading(true)
     setOcrOriginal("")
     setOcrTranslated("")
-    const url = URL.createObjectURL(file)
-    setCameraImage(url)
-    try {
-      // OCR 100% GRATUITO com tesseract.js - sem API
-      const worker = await createWorker('eng+por+spa', 1, {
-        logger: m => { if(m.status==='recognizing text') setOcrOriginal(`Lendo... ${Math.round(m.progress*100)}%`) }
-      })
-      const { data:{ text } } = await worker.recognize(file)
-      await worker.terminate()
-      const extracted = text.trim()
-      if (!extracted) { alert('Nenhum texto encontrado'); setCameraLoading(false); return }
-      setOcrOriginal(extracted)
-      // Traduz usando sua API gratuita MyMemory
-      const transRes = await fetch('/api/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: extracted.slice(0,380), from: 'auto', to: from }) })
-      const transData = await transRes.json()
-      setOcrTranslated(transData.translated || extracted)
-    } catch(err){ console.error(err); alert('Erro no OCR gratuito, tente foto com mais luz') }
-    setCameraLoading(false)
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const base64 = reader.result as string
+      setCameraImage(base64)
+      try{
+        const ocrRes = await fetch('/api/ocr', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64 }) })
+        const ocrData = await ocrRes.json()
+        const extracted = ocrData.extracted || ''
+        if (!extracted) { alert('Nenhum texto encontrado, tente com mais luz'); setCameraLoading(false); return }
+        setOcrOriginal(extracted)
+        const transRes = await fetch('/api/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: extracted.slice(0,380), from: 'auto', to: from }) })
+        const transData = await transRes.json()
+        setOcrTranslated(transData.translated || extracted)
+      }catch(err){ console.error(err); alert('Erro no OCR, tente novamente') }
+      setCameraLoading(false)
+    }
+    reader.readAsDataURL(file)
   }
 
  return (
@@ -136,44 +134,20 @@ export default function Page(){
           <select value={to} onChange={e=>setTo(e.target.value)} className="bg-[#1a1a1a] border border-[#333] rounded-full px-2.5 py-1.5 text-xs">{LANGS.map(l=><option key={l.code} value={l.code}>{l.flag} {l.label}</option>)}</select>
         </div>
       </header>
-
       <div className="flex-1 relative bg-[#050507] flex items-center justify-center">
         {cameraImage && (
           <div className="fixed bottom-4 left-4 right-4 z-50 bg-black/90 backdrop-blur border border-yellow-500/30 rounded-2xl p-4 max-h- overflow-auto">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-yellow-400 font-bold">Foto escaneada</h3>
-              <button onClick={()=>{setCameraImage(null); setOcrOriginal(""); setOcrTranslated("")}} className="text-white/60 hover:text-white">✕</button>
-            </div>
+            <div className="flex justify-between items-center mb-3"><h3 className="text-yellow-400 font-bold">Foto escaneada</h3><button onClick={()=>{setCameraImage(null); setOcrOriginal(""); setOcrTranslated("")}} className="text-white/60 hover:text-white">✕</button></div>
             <img src={cameraImage} className="w-full h-32 object-contain rounded-lg mb-3 bg-white/10" />
-            {ocrOriginal && (
-              <>
-                <p className="text-xs text-white/50 mb-1">ORIGINAL:</p>
-                <p className="bg-white/10 p-3 rounded-lg text-white text-sm mb-3 whitespace-pre-wrap">{ocrOriginal}</p>
-                <p className="text-xs text-yellow-400/70 mb-1">TRADUZIDO ({from.toUpperCase()}):</p>
-                <p className="bg-yellow-500/20 p-3 rounded-lg text-white text-sm whitespace-pre-wrap border border-yellow-500/30">{ocrTranslated || 'Traduzindo...'}</p>
-              </>
-            )}
+            {ocrOriginal && (<><p className="text-xs text-white/50 mb-1">ORIGINAL:</p><p className="bg-white/10 p-3 rounded-lg text-white text-sm mb-3 whitespace-pre-wrap">{ocrOriginal}</p><p className="text-xs text-yellow-400/70 mb-1">TRADUZIDO ({from.toUpperCase()}):</p><p className="bg-yellow-500/20 p-3 rounded-lg text-white text-sm whitespace-pre-wrap border border-yellow-500/30">{ocrTranslated || 'Traduzindo...'}</p></>)}
           </div>
         )}
         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleCameraCapture} className="hidden" />
-        <button onClick={() => cameraInputRef.current?.click()} disabled={cameraLoading} className="fixed bottom-28 right-4 z-[70] bg-zinc-900 border border-yellow-500/30 text-yellow-200 text-xs px-3 py-2 rounded-full shadow-xl">
-          {cameraLoading? '⏳ LENDO...' : '📷 SCAN GRÁTIS'}
-        </button>
+        <button onClick={() => cameraInputRef.current?.click()} disabled={cameraLoading} className="fixed bottom-28 right-4 z-[70] bg-zinc-900 border border-yellow-500/30 text-yellow-200 text-xs px-3 py-2 rounded-full shadow-xl">{cameraLoading? '⏳ LENDO...' : '📷 SCAN'}</button>
         <img src="/globo-passaporte.png" alt="Ritinha" className={`absolute w- h- object-contain transition-all duration-700 ${isActive? "scale-110 animate-pulse drop-shadow-[0_0_60px_rgba(255,60,60,0.8)] brightness-110" : "animate-[spin_60s_linear_infinite] opacity-90 drop-shadow-[0_0_30px_rgba(255,215,0,0.4)]"}`} />
-        <div className="relative z-10 w-full max-w- px-4">
-          <div className="bg-black/75 backdrop-blur border border-[#D4AF37]/20 rounded-2xl p-4 min-h-">
-            {isActive? (<div><div className="flex items-center gap-2 text-red-400 text-xs animate-pulse mb-2"><span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span> GRAVANDO</div><div className="text-white/90 leading-relaxed">{interim||origem||'Ouvindo...'}</div></div>
-            ) : origem || traduzido? (<div className="space-y-3">{origem && <div><div className="text-xs tracking-widest text-white/40 mb-1">{fromFlag} {fromLabel} DISSE:</div><div className="text-white font-medium">{origem}</div></div>}{traduzido && <div><div className="text-xs tracking-widest text-[#D4AF37]/60 mb-1">{toFlag} {toLabel} TRADUÇÃO:</div><div className="text-[#FFD700] font-bold text-lg">{traduzido}</div></div>}</div>
-            ) : (<div className="text-center text-white/30 text-sm py-8">Toque no microfone</div>)}
-          </div>
-        </div>
+        <div className="relative z-10 w-full max-w- px-4"><div className="bg-black/75 backdrop-blur border border-[#D4AF37]/20 rounded-2xl p-4 min-h-">{isActive? (<div><div className="flex items-center gap-2 text-red-400 text-xs animate-pulse mb-2"><span className="w-2 h-2 bg-red-500 rounded-full animate-ping"></span> GRAVANDO</div><div className="text-white/90 leading-relaxed">{interim||origem||'Ouvindo...'}</div></div>) : origem || traduzido? (<div className="space-y-3">{origem && <div><div className="text-xs tracking-widest text-white/40 mb-1">{fromFlag} {fromLabel} DISSE:</div><div className="text-white font-medium">{origem}</div></div>}{traduzido && <div><div className="text-xs tracking-widest text-[#D4AF37]/60 mb-1">{toFlag} {toLabel} TRADUÇÃO:</div><div className="text-[#FFD700] font-bold text-lg">{traduzido}</div></div>}</div>) : (<div className="text-center text-white/30 text-sm py-8">Toque no microfone</div>)}</div></div>
       </div>
-      <div className="bg-[#0f0f10] border-t border-[#222] p-3 pb-5 z-20">
-        <div className="max-w- mx-auto">
-          {!isActive? (<div className="grid grid-cols-[1fr_48px_1fr] gap-2 items-center"><button onClick={()=>startContinuous(from)} className="h- rounded-2xl bg-[#FFD700] text-black font-black flex flex-col items-center justify-center gap-0.5 shadow-[0_0_20px_rgba(255,215,0,0.35)] active:scale-95"><span>🎤 MIC</span><span className="text-sm">{fromFlag} {fromLabel}</span></button><button onClick={swap} className="h-12 w-12 rounded-full bg-[#1e1e1e] border border-[#333] text-[#D4AF37] mx-auto">↔</button><button onClick={()=>startContinuous(to)} className="h- rounded-2xl bg-[#1a1a1f] border border-[#D4AF37]/30 text-[#D4AF37] font-black flex flex-col items-center justify-center gap-0.5 active:scale-95"><span>🎤 MIC</span><span className="text-sm">{toFlag} {toLabel}</span></button></div>
-          ) : (<button onClick={stopContinuous} className="w-full h- rounded-2xl bg-red-600 text-white font-black flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,0,0,0.5)] animate-pulse active:scale-95">PARAR E TRADUZIR</button>)}
-        </div>
-      </div>
+      <div className="bg-[#0f0f10] border-t border-[#222] p-3 pb-5 z-20"><div className="max-w- mx-auto">{!isActive? (<div className="grid grid-cols-[1fr_48px_1fr] gap-2 items-center"><button onClick={()=>startContinuous(from)} className="h- rounded-2xl bg-[#FFD700] text-black font-black flex flex-col items-center justify-center gap-0.5 shadow-[0_0_20px_rgba(255,215,0,0.35)] active:scale-95"><span>🎤 MIC</span><span className="text-sm">{fromFlag} {fromLabel}</span></button><button onClick={swap} className="h-12 w-12 rounded-full bg-[#1e1e1e] border border-[#333] text-[#D4AF37] mx-auto">↔</button><button onClick={()=>startContinuous(to)} className="h- rounded-2xl bg-[#1a1a1f] border border-[#D4AF37]/30 text-[#D4AF37] font-black flex flex-col items-center justify-center gap-0.5 active:scale-95"><span>🎤 MIC</span><span className="text-sm">{toFlag} {toLabel}</span></button></div>) : (<button onClick={stopContinuous} className="w-full h- rounded-2xl bg-red-600 text-white font-black flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(255,0,0,0.5)] animate-pulse active:scale-95">PARAR E TRADUZIR</button>)}</div></div>
     </div>
   )
 }
